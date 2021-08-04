@@ -26,7 +26,7 @@ pip install .
 # 0. Inizio procedura di analisi
 
 RUN_FOLDER='/hpcnfs/techunits/seq-fpo/'
-RUN='NOME_DELLA_RUN'
+RUN='210802_NS500140_0421_AHVKGFAFX2'
 # 210325_M02679_0214_000000000-JLFNL
 
 #specificare l'utente che fa l'analisi
@@ -43,7 +43,14 @@ conda activate default
 # Qualora conda non si attivasse lanciare il comando:
 # source /hpcnfs/software/anaconda/anaconda3/etc/profile.d/conda.sh
 
-/hpcnfs/software/bcl2fastq2/bin/bcl2fastq --barcode-mismatches 1 -p $NCPUS -r $NCPUS -w $NCPUS --no-lane-splitting  > bcl2fastq.log 2>&1
+/hpcnfs/software/bcl2fastq2/bin/bcl2fastq \
+--sample-sheet SampleSheet.csv \
+--barcode-mismatches 1 \
+-p $NCPUS -r $NCPUS -w $NCPUS \
+--no-lane-splitting  > bcl2fastq.log 2>&1
+
+# Nel caso di errori di sequenziamento
+# /hpcnfs/software/bcl2fastq2/bin/bcl2fastq --barcode-mismatches 1 -p $NCPUS -r $NCPUS -w $NCPUS --no-lane-splitting --ignore-missing-bcls --ignore-missing-filter --ignore-missing-positions  --ignore-missing-controls > bcl2fastq.log 2>&1
 
 conda deactivate
 
@@ -92,6 +99,8 @@ ll 1*R1* | wc -l
 
 mkdir GROUP1
 mkdir GROUP2
+mkdir GROUP3
+mkdir GROUP4
 # ... mkdir GROUPN
 
 path="${RUN_FOLDER}${RUN}/Data/Intensities/BaseCalls/"
@@ -110,7 +119,6 @@ echo $sample;
 ln -s ${path}${sample}* $GROUP;
 done;
 
-
 GROUP=GROUP2
 for i in {50..99};
 do
@@ -123,6 +131,31 @@ echo $sample;
 ln -s ${path}${sample}* $GROUP;
 done;
 
+GROUP=GROUP3
+for i in {100..149};
+do
+f=${lista[$i]};
+j=$(basename $f);
+echo $j;
+arrIN=(${j//./ });
+sample="${arrIN[0]}";
+echo $sample;
+ln -s ${path}${sample}* $GROUP;
+done;
+
+GROUP=GROUP4
+for i in {150..200};
+do
+f=${lista[$i]};
+j=$(basename $f);
+echo $j;
+arrIN=(${j//./ });
+sample="${arrIN[0]}";
+echo $sample;
+ln -s ${path}${sample}* $GROUP;
+done;
+
+
 # NB cambiare i valori nei cicli in modo da fare in modo che tutti i campioni siano presenti
 # In caso ci siano meno di 50 campioni tenere comunque la procedura e creare una unica cartella GROUP1
 
@@ -134,7 +167,10 @@ cd /hpcnfs/data/fpo
 # --------------------------------------------------------------------
 # 6.  Per ogni gruppo di campioni è necessario creare una apposita cartella e un apposito codice. 
 
-GROUP=GROUP1
+#GROUP=GROUP1
+#GROUP=GROUP2
+#GROUP=GROUP3
+GROUP=GROUP4
 
 WORKDIR="/hpcnfs/data/fpo/${RUN}_${GROUP}"
 OUTNAME="${RUN}_${GROUP}"
@@ -161,7 +197,11 @@ cd ..
 # --------------------------------------------------------------------
 # 7. Per ciascuna cartella creata è necessario creare un "samplesheet.csv" 
 
-GROUP=GROUP1
+#GROUP=GROUP1
+#GROUP=GROUP2
+#GROUP=GROUP3
+GROUP=GROUP4
+
 cd "/hpcnfs/data/fpo/${RUN}_${GROUP}"
 echo "sample,fastq_1,fastq_2" > samplesheet.csv
 
@@ -186,11 +226,14 @@ cd ..
 # 8. Ritornare nella cartella di analisi e sottomettere l'analisi al
 # gestore di code.
 
-GROUP=GROUP1
+#GROUP=GROUP1
+#GROUP=GROUP2
+#GROUP=GROUP3
+GROUP=GROUP4
+
 name="${RUN}_${GROUP}"
 cd "/hpcnfs/data/fpo/${RUN}_${GROUP}"
 qsub runs/${name}.sh
-
 cd ..
 
 # ****ripetere con tutti i GRUPPI di campioni**** 
@@ -203,6 +246,8 @@ exit
 # 10. Controllare il proseguimento del job con il comando
 
 qstat -as1 -u $USER
+#in caso non parta
+# qdel 30871.peralta
 
 # --------------------------------------------------------------------
 # 10. Quando il job risulta terminato entrare nella cartella di analisi 
@@ -215,7 +260,7 @@ qsub -I -q interactive -l ncpus=1
 
 cd /hpcnfs/data/fpo
 
-RUN='NOME_DELLA_RUN'
+RUN='210802_NS500140_0421_AHVKGFAFX2'
 # 210325_M02679_0214_000000000-JLFNL
 
 analysis_folder="/hpcnfs/data/fpo/${RUN}*" 
